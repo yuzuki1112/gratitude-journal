@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>感謝ノート</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .note-container { margin-bottom: 20px; }
+        .notes { margin-top: 20px; }
+        .note { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        .postcard { border: 2px solid #000; padding: 20px; width: 300px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>感謝ノート</h1>
+    <div class="note-container">
+        <textarea id="note" rows="4" cols="50" placeholder="今日感謝したいことを書いてください..."></textarea><br>
+        <button onclick="saveNote()">保存</button>
+    </div>
+    <h2>過去のエントリ</h2>
+    <div id="notes" class="notes"></div>
+    <h2>ポストカードプレビュー</h2>
+    <div id="postcard" class="postcard"></div>
+    <button onclick="printPostcard()">印刷</button>
+
+    <script>
+        const apiUrl = 'https://YOUR_BACKEND_API_URL';  // ここにバックエンドのURLを指定します
+
+        async function saveNote() {
+            const note = document.getElementById('note').value;
+            if (note) {
+                const response = await fetch(`${apiUrl}/api/notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: note })
+                });
+                if (response.ok) {
+                    document.getElementById('note').value = '';
+                    loadNotes();
+                }
+            }
+        }
+
+        async function loadNotes() {
+            const response = await fetch(`${apiUrl}/api/notes`);
+            const notes = await response.json();
+            const notesDiv = document.getElementById('notes');
+            notesDiv.innerHTML = '';
+            notes.forEach(note => {
+                const div = document.createElement('div');
+                div.className = 'note';
+                div.textContent = note.content;
+                notesDiv.appendChild(div);
+            });
+            updatePostcard(notes);
+        }
+
+        function updatePostcard(notes) {
+            const postcardDiv = document.getElementById('postcard');
+            postcardDiv.innerHTML = '';
+            notes.forEach(note => {
+                const p = document.createElement('p');
+                p.textContent = note.content;
+                postcardDiv.appendChild(p);
+            });
+        }
+
+        function printPostcard() {
+            const postcardDiv = document.getElementById('postcard');
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>ポストカード</title></head><body>');
+            printWindow.document.write(postcardDiv.innerHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        window.onload = loadNotes;
+    </script>
+</body>
+</html>
